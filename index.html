@@ -464,14 +464,16 @@
             const ctx = geoCtx;
             const centerX = geoCanvas.width / 2;
             const centerY = geoCanvas.height / 2;
+            const maxRadius = Math.min(centerX, centerY) - 30; // 여백 확보
 
             ctx.clearRect(0, 0, geoCanvas.width, geoCanvas.height);
 
             // 지구 중심 좌표계에서의 위치 계산
-            // 태양의 위치 (지구 기준)
-            const sunAngleFromEarth = earthAngle + Math.PI; // 태양은 지구 반대편
-            const sunX = centerX + EARTH_ORBIT_RADIUS * Math.cos(sunAngleFromEarth);
-            const sunY = centerY - EARTH_ORBIT_RADIUS * Math.sin(sunAngleFromEarth);
+            // 태양의 위치 (지구 기준) - 고정 거리로 표시
+            const sunAngleFromEarth = earthAngle + Math.PI;
+            const sunDisplayRadius = maxRadius * 0.6;
+            const sunX = centerX + sunDisplayRadius * Math.cos(sunAngleFromEarth);
+            const sunY = centerY - sunDisplayRadius * Math.sin(sunAngleFromEarth);
 
             // 화성의 위치 (지구 기준)
             const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
@@ -479,10 +481,12 @@
             const marsDistance = Math.sqrt(marsRelX * marsRelX + marsRelY * marsRelY);
             const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
 
-            // 스케일 조정 (화면에 맞게)
-            const scale = 150 / (MARS_ORBIT_RADIUS + EARTH_ORBIT_RADIUS);
-            const marsDisplayX = centerX + marsRelX * scale * 1.5;
-            const marsDisplayY = centerY - marsRelY * scale * 1.5;
+            // 화성 거리에 따른 동적 스케일 (항상 화면 안에 들어오도록)
+            // 최대 거리: 지구-화성 최대 거리 = MARS_ORBIT_RADIUS + EARTH_ORBIT_RADIUS
+            const maxMarsDistance = MARS_ORBIT_RADIUS + EARTH_ORBIT_RADIUS;
+            const marsDisplayRadius = (marsDistance / maxMarsDistance) * maxRadius * 0.95;
+            const marsDisplayX = centerX + marsDisplayRadius * Math.cos(marsAngleFromEarth);
+            const marsDisplayY = centerY - marsDisplayRadius * Math.sin(marsAngleFromEarth);
 
             // 지구 그리기 (중심)
             ctx.beginPath();
@@ -574,8 +578,12 @@
             // 화면 좌표 (별들 사이에서의 위치)
             // 순행 = 각도 증가 = 서→동 = 화면에서 왼쪽으로 이동
             // 역행 = 각도 감소 = 동→서 = 화면에서 오른쪽으로 이동
-            const scale = (width - 100) / (Math.PI * 0.4); // 스케일 조정
-            const skyX = width / 2 - angleChange * scale;
+            // 1회합주기 동안 화성의 각도 변화는 약 ±0.3 라디안 범위
+            const maxAngleRange = 0.5; // 최대 각도 범위 (라디안)
+            const scale = (width - 100) / (maxAngleRange * 2);
+            // 화면 범위 내로 제한
+            const clampedAngleChange = Math.max(-maxAngleRange, Math.min(maxAngleRange, angleChange));
+            const skyX = Math.max(50, Math.min(width - 50, width / 2 - clampedAngleChange * scale));
             const skyY = height / 2;
 
             // 이각 계산 (정보 표시용)
@@ -784,7 +792,8 @@
             const initAngle = Math.atan2(marsRelY0, marsRelX0);
             initialMarsAngleFromEarth = initAngle;
 
-            const scale = (width - 100) / (Math.PI * 0.4);
+            const maxAngleRange = 0.5;
+            const scale = (width - 100) / (maxAngleRange * 2);
 
             for (let i = 0; i <= steps; i++) {
                 const p = (i / MAX_TRAIL_LENGTH) * currentProgress;
@@ -798,7 +807,8 @@
                 while (angleChange > Math.PI) angleChange -= 2 * Math.PI;
                 while (angleChange < -Math.PI) angleChange += 2 * Math.PI;
 
-                const skyX = width / 2 - angleChange * scale;
+                const clampedAngleChange = Math.max(-maxAngleRange, Math.min(maxAngleRange, angleChange));
+                const skyX = Math.max(50, Math.min(width - 50, width / 2 - clampedAngleChange * scale));
                 skyTrail.push({ x: skyX, y: skyCanvas.height / 2, progress: p, angle: marsAngleFromEarth });
             }
 
