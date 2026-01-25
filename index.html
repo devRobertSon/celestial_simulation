@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>외행성의 순행과 역행 시뮬레이션</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a20 0%, #1a1a3a 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .views-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .view-box {
+            background: rgba(20, 20, 50, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid rgba(100, 100, 200, 0.3);
+        }
+
+        .view-title {
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #88ccff;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: radial-gradient(ellipse at center, #0a0a1a 0%, #000005 100%);
+            border-radius: 10px;
+        }
+
+        .sky-view-container {
+            background: rgba(20, 20, 50, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            border: 1px solid rgba(100, 100, 200, 0.3);
+            margin-bottom: 20px;
+        }
+
+        #skyCanvas {
+            background: linear-gradient(180deg, #000010 0%, #000020 100%);
+        }
+
+        .controls {
+            background: rgba(30, 30, 60, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(100, 100, 200, 0.3);
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .btn-pause {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #333;
+        }
+
+        .btn-stop {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .slider-container {
+            flex: 1;
+            max-width: 600px;
+            min-width: 300px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border: none;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: rgba(50, 50, 80, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .prograde {
+            color: #4CAF50;
+        }
+
+        .retrograde {
+            color: #f44336;
+        }
+
+        .stationary {
+            color: #ffc107;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .color-sun { background: #ffdd00; box-shadow: 0 0 10px #ffdd00; }
+        .color-earth { background: #4a9eff; }
+        .color-mars { background: #ff6b4a; }
+        .color-orbit { background: rgba(255,255,255,0.3); }
+
+        .explanation {
+            background: rgba(40, 40, 70, 0.8);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .explanation h3 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            margin-left: 20px;
+        }
+
+        .highlight-prograde { color: #4CAF50; font-weight: bold; }
+        .highlight-retrograde { color: #f44336; font-weight: bold; }
+        .highlight-opposition { color: #ffd700; font-weight: bold; }
+
+        @media (max-width: 900px) {
+            .views-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌌 외행성의 순행과 역행 시뮬레이션</h1>
+        <p class="subtitle">Planetary Retrograde Motion Simulator - 지구에서 관측한 외행성(화성)의 겉보기 운동</p>
+
+        <div class="views-container">
+            <div class="view-box">
+                <h3 class="view-title">☀️ 태양 중심 뷰 (실제 궤도)</h3>
+                <canvas id="helioCanvas" width="400" height="400"></canvas>
+            </div>
+            <div class="view-box">
+                <h3 class="view-title">🌍 지구 중심 뷰 (겉보기 운동)</h3>
+                <canvas id="geoCanvas" width="400" height="400"></canvas>
+            </div>
+        </div>
+
+        <div class="sky-view-container">
+            <h3 class="view-title">🌠 천구에서 본 외행성의 위치 (동→서 방향)</h3>
+            <canvas id="skyCanvas" width="850" height="150"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <button class="btn btn-play" id="playBtn">▶ 재생</button>
+                <button class="btn btn-pause" id="pauseBtn">⏸ 일시정지</button>
+                <button class="btn btn-stop" id="stopBtn">⏹ 정지</button>
+            </div>
+
+            <div class="control-row">
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>충 (Opposition)</span>
+                        <span id="sliderValue">0%</span>
+                        <span>다음 충</span>
+                    </div>
+                    <input type="range" class="slider" id="timeSlider" min="0" max="100" value="0">
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-box">
+                    <div class="info-label">현재 운동 상태</div>
+                    <div class="info-value" id="motionStatus">순행</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">회합주기 진행</div>
+                    <div class="info-value" id="synodicProgress">0일 / 780일</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">외행성 이각</div>
+                    <div class="info-value" id="elongation">180°</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">외행성 위치</div>
+                    <div class="info-value" id="marsPosition">충 (Opposition)</div>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color color-sun"></div>태양</div>
+                <div class="legend-item"><div class="legend-color color-earth"></div>지구</div>
+                <div class="legend-item"><div class="legend-color color-mars"></div>화성 (외행성)</div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h3>📚 외행성의 순행과 역행 이해하기</h3>
+            <ul>
+                <li><span class="highlight-prograde">순행 (Prograde)</span>: 외행성이 별들 사이를 서→동 방향으로 이동하는 것처럼 보이는 현상</li>
+                <li><span class="highlight-retrograde">역행 (Retrograde)</span>: 외행성이 별들 사이를 동→서 방향으로 이동하는 것처럼 보이는 현상</li>
+                <li><span class="highlight-opposition">충 (Opposition)</span>: 태양-지구-외행성이 일직선 상에 놓여, 외행성이 태양의 정반대편에 위치하는 때</li>
+                <li><strong>역행의 원인</strong>: 지구가 외행성보다 빠르게 공전하므로, 지구가 외행성을 추월할 때 외행성이 뒤로 움직이는 것처럼 보입니다.</li>
+                <li><strong>회합주기</strong>: 화성의 경우 약 780일(약 2년 2개월)마다 충이 반복됩니다.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // 캔버스 설정
+        const helioCanvas = document.getElementById('helioCanvas');
+        const geoCanvas = document.getElementById('geoCanvas');
+        const skyCanvas = document.getElementById('skyCanvas');
+        const helioCtx = helioCanvas.getContext('2d');
+        const geoCtx = geoCanvas.getContext('2d');
+        const skyCtx = skyCanvas.getContext('2d');
+
+        // 상수 정의
+        const SYNODIC_PERIOD = 780; // 화성 회합주기 (일)
+        const EARTH_PERIOD = 365.25; // 지구 공전주기 (일)
+        const MARS_PERIOD = 687; // 화성 공전주기 (일)
+
+        // 궤도 반지름 (픽셀)
+        const EARTH_ORBIT_RADIUS = 100;
+        const MARS_ORBIT_RADIUS = 152;
+
+        // 시뮬레이션 상태
+        let isPlaying = false;
+        let animationId = null;
+        let currentProgress = 0; // 0 ~ 1 (회합주기 진행도)
+        let skyTrail = []; // 천구에서의 외행성 궤적
+        const MAX_TRAIL_LENGTH = 200;
+
+        // 시작 시 지구와 화성의 초기 각도 (충 위치)
+        // 충일 때: 태양-지구-화성이 일직선, 화성은 지구 반대편
+        const INITIAL_EARTH_ANGLE = 0;
+        const INITIAL_MARS_ANGLE = Math.PI; // 180° 반대편
+
+        // 각속도 (라디안/일)
+        const EARTH_ANGULAR_VELOCITY = (2 * Math.PI) / EARTH_PERIOD;
+        const MARS_ANGULAR_VELOCITY = (2 * Math.PI) / MARS_PERIOD;
+
+        // 현재 각도 계산 함수
+        function getAngles(progress) {
+            const days = progress * SYNODIC_PERIOD;
+            const earthAngle = INITIAL_EARTH_ANGLE + EARTH_ANGULAR_VELOCITY * days;
+            const marsAngle = INITIAL_MARS_ANGLE + MARS_ANGULAR_VELOCITY * days;
+            return { earthAngle, marsAngle, days };
+        }
+
+        // 태양 중심 뷰 그리기
+        function drawHeliocentricView(earthAngle, marsAngle) {
+            const ctx = helioCtx;
+            const centerX = helioCanvas.width / 2;
+            const centerY = helioCanvas.height / 2;
+
+            // 배경 클리어
+            ctx.clearRect(0, 0, helioCanvas.width, helioCanvas.height);
+
+            // 궤도 그리기
+            ctx.strokeStyle = 'rgba(100, 150, 255, 0.3)';
+            ctx.lineWidth = 1;
+
+            // 지구 궤도
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, EARTH_ORBIT_RADIUS, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 화성 궤도
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, MARS_ORBIT_RADIUS, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 태양 그리기
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffdd00';
+            ctx.fill();
+            ctx.shadowColor = '#ffdd00';
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // 지구 위치 계산 및 그리기
+            const earthX = centerX + EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+            const earthY = centerY - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+
+            ctx.beginPath();
+            ctx.arc(earthX, earthY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#4a9eff';
+            ctx.fill();
+
+            // 화성 위치 계산 및 그리기
+            const marsX = centerX + MARS_ORBIT_RADIUS * Math.cos(marsAngle);
+            const marsY = centerY - MARS_ORBIT_RADIUS * Math.sin(marsAngle);
+
+            ctx.beginPath();
+            ctx.arc(marsX, marsY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff6b4a';
+            ctx.fill();
+
+            // 태양-지구-화성 연결선
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(earthX, earthY);
+            ctx.lineTo(marsX, marsY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 지구에서 화성을 바라보는 시선
+            ctx.strokeStyle = 'rgba(255, 200, 100, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(earthX, earthY);
+            ctx.lineTo(marsX, marsY);
+            ctx.stroke();
+
+            // 레이블
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('태양', centerX, centerY + 30);
+            ctx.fillText('지구', earthX, earthY + 20);
+            ctx.fillText('화성', marsX, marsY + 20);
+        }
+
+        // 지구 중심 뷰 그리기
+        function drawGeocentricView(earthAngle, marsAngle) {
+            const ctx = geoCtx;
+            const centerX = geoCanvas.width / 2;
+            const centerY = geoCanvas.height / 2;
+
+            ctx.clearRect(0, 0, geoCanvas.width, geoCanvas.height);
+
+            // 지구 중심 좌표계에서의 위치 계산
+            // 태양의 위치 (지구 기준)
+            const sunAngleFromEarth = earthAngle + Math.PI; // 태양은 지구 반대편
+            const sunX = centerX + EARTH_ORBIT_RADIUS * Math.cos(sunAngleFromEarth);
+            const sunY = centerY - EARTH_ORBIT_RADIUS * Math.sin(sunAngleFromEarth);
+
+            // 화성의 위치 (지구 기준)
+            const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+            const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+            const marsDistance = Math.sqrt(marsRelX * marsRelX + marsRelY * marsRelY);
+            const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
+
+            // 스케일 조정 (화면에 맞게)
+            const scale = 150 / (MARS_ORBIT_RADIUS + EARTH_ORBIT_RADIUS);
+            const marsDisplayX = centerX + marsRelX * scale * 1.5;
+            const marsDisplayY = centerY - marsRelY * scale * 1.5;
+
+            // 지구 그리기 (중심)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+            ctx.fillStyle = '#4a9eff';
+            ctx.fill();
+
+            // 태양 그리기
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffdd00';
+            ctx.shadowColor = '#ffdd00';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // 화성 그리기
+            ctx.beginPath();
+            ctx.arc(marsDisplayX, marsDisplayY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff6b4a';
+            ctx.fill();
+
+            // 시선 방향 표시
+            ctx.strokeStyle = 'rgba(255, 200, 100, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(marsDisplayX, marsDisplayY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 레이블
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('지구', centerX, centerY + 25);
+            ctx.fillText('태양', sunX, sunY + 25);
+            ctx.fillText('화성', marsDisplayX, marsDisplayY + 20);
+
+            return marsAngleFromEarth;
+        }
+
+        // 천구 뷰 그리기
+        function drawSkyView(earthAngle, marsAngle, progress) {
+            const ctx = skyCtx;
+            const width = skyCanvas.width;
+            const height = skyCanvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // 배경 별 그리기
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 37) % width;
+                const y = (i * 23) % height;
+                ctx.beginPath();
+                ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 황도 표시
+            ctx.strokeStyle = 'rgba(255, 200, 100, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+
+            // 화성의 방향 계산 (지구에서 본 각도)
+            const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+            const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+            const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
+
+            // 천구 좌표로 변환 (동쪽이 왼쪽, 서쪽이 오른쪽)
+            // 이각 0° = 태양 방향, 180° = 충
+            const sunAngle = earthAngle + Math.PI;
+            let elongation = marsAngleFromEarth - sunAngle;
+            while (elongation < -Math.PI) elongation += 2 * Math.PI;
+            while (elongation > Math.PI) elongation -= 2 * Math.PI;
+
+            // 화면 좌표 (이각을 x 좌표로 변환)
+            // 충(180°)일 때 중앙, 합일 때 양 끝
+            const skyX = width / 2 - (elongation / Math.PI) * (width / 2 - 50);
+            const skyY = height / 2;
+
+            // 궤적에 추가
+            skyTrail.push({ x: skyX, y: skyY, progress: progress });
+            if (skyTrail.length > MAX_TRAIL_LENGTH) {
+                skyTrail.shift();
+            }
+
+            // 궤적 그리기
+            if (skyTrail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(skyTrail[0].x, skyTrail[0].y);
+                for (let i = 1; i < skyTrail.length; i++) {
+                    const alpha = i / skyTrail.length;
+                    ctx.strokeStyle = `rgba(255, 150, 100, ${alpha * 0.8})`;
+                    ctx.lineWidth = 2;
+                    ctx.lineTo(skyTrail[i].x, skyTrail[i].y);
+                }
+                ctx.stroke();
+            }
+
+            // 화성 현재 위치
+            ctx.beginPath();
+            ctx.arc(skyX, skyY, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff6b4a';
+            ctx.shadowColor = '#ff6b4a';
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // 태양 위치 표시 (양 끝)
+            ctx.fillStyle = '#ffdd00';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('☀️ 태양 (합)', 40, height - 10);
+            ctx.fillText('☀️ 태양 (합)', width - 40, height - 10);
+            ctx.fillText('충', width / 2, height - 10);
+
+            // 동서 방향 표시
+            ctx.fillStyle = '#888';
+            ctx.fillText('← 동 (E)', 50, 20);
+            ctx.fillText('서 (W) →', width - 50, 20);
+
+            // 순행/역행 화살표 표시
+            if (skyTrail.length > 10) {
+                const recent = skyTrail.slice(-10);
+                const dx = recent[recent.length - 1].x - recent[0].x;
+
+                ctx.fillStyle = dx > 0 ? '#f44336' : '#4CAF50';
+                ctx.font = 'bold 14px sans-serif';
+                const arrow = dx > 0 ? '← 역행' : '순행 →';
+                ctx.fillText(arrow, skyX, skyY - 20);
+            }
+
+            return elongation;
+        }
+
+        // 운동 상태 판별
+        function getMotionStatus(progress) {
+            const delta = 0.001;
+            const { earthAngle: ea1, marsAngle: ma1 } = getAngles(progress);
+            const { earthAngle: ea2, marsAngle: ma2 } = getAngles(progress + delta);
+
+            // 지구에서 본 화성 방향 계산
+            const angle1 = Math.atan2(
+                MARS_ORBIT_RADIUS * Math.sin(ma1) - EARTH_ORBIT_RADIUS * Math.sin(ea1),
+                MARS_ORBIT_RADIUS * Math.cos(ma1) - EARTH_ORBIT_RADIUS * Math.cos(ea1)
+            );
+            const angle2 = Math.atan2(
+                MARS_ORBIT_RADIUS * Math.sin(ma2) - EARTH_ORBIT_RADIUS * Math.sin(ea2),
+                MARS_ORBIT_RADIUS * Math.cos(ma2) - EARTH_ORBIT_RADIUS * Math.cos(ea2)
+            );
+
+            let dAngle = angle2 - angle1;
+            while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
+            while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
+
+            const threshold = 0.00001;
+            if (Math.abs(dAngle) < threshold) {
+                return { status: '유', class: 'stationary', description: '유 (Stationary)' };
+            } else if (dAngle > 0) {
+                return { status: '순행', class: 'prograde', description: '순행 (Prograde)' };
+            } else {
+                return { status: '역행', class: 'retrograde', description: '역행 (Retrograde)' };
+            }
+        }
+
+        // 위치 설명
+        function getPositionDescription(elongationDeg) {
+            const absElong = Math.abs(elongationDeg);
+            if (absElong > 170) return '충 (Opposition)';
+            if (absElong > 120) return '충 근처';
+            if (absElong > 90) return '서구/동구 근처';
+            if (absElong > 45) return '합 접근 중';
+            return '합 (Conjunction) 근처';
+        }
+
+        // UI 업데이트
+        function updateUI(progress) {
+            const { earthAngle, marsAngle, days } = getAngles(progress);
+
+            // 뷰 그리기
+            drawHeliocentricView(earthAngle, marsAngle);
+            const marsAngleFromEarth = drawGeocentricView(earthAngle, marsAngle);
+            const elongation = drawSkyView(earthAngle, marsAngle, progress);
+
+            // 이각 계산 (도)
+            let elongationDeg = (elongation * 180 / Math.PI);
+
+            // 운동 상태
+            const motion = getMotionStatus(progress);
+            document.getElementById('motionStatus').textContent = motion.description;
+            document.getElementById('motionStatus').className = `info-value ${motion.class}`;
+
+            // 진행 상태
+            document.getElementById('synodicProgress').textContent =
+                `${Math.round(days)}일 / ${SYNODIC_PERIOD}일`;
+
+            document.getElementById('elongation').textContent =
+                `${Math.abs(elongationDeg).toFixed(1)}°`;
+
+            document.getElementById('marsPosition').textContent =
+                getPositionDescription(elongationDeg);
+
+            document.getElementById('sliderValue').textContent =
+                `${Math.round(progress * 100)}%`;
+        }
+
+        // 애니메이션
+        function animate() {
+            if (!isPlaying) return;
+
+            currentProgress += 0.0005; // 속도 조절
+            if (currentProgress >= 1) {
+                currentProgress = 0;
+                skyTrail = [];
+            }
+
+            document.getElementById('timeSlider').value = currentProgress * 100;
+            updateUI(currentProgress);
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // 이벤트 핸들러
+        document.getElementById('playBtn').addEventListener('click', () => {
+            if (!isPlaying) {
+                isPlaying = true;
+                animate();
+            }
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            isPlaying = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            isPlaying = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            currentProgress = 0;
+            skyTrail = [];
+            document.getElementById('timeSlider').value = 0;
+            updateUI(0);
+        });
+
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            const wasPlaying = isPlaying;
+            isPlaying = false;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            currentProgress = e.target.value / 100;
+
+            // 슬라이더 위치에 따라 궤적 재생성
+            skyTrail = [];
+            const steps = Math.floor(currentProgress * MAX_TRAIL_LENGTH);
+            for (let i = 0; i <= steps; i++) {
+                const p = (i / MAX_TRAIL_LENGTH) * currentProgress;
+                const { earthAngle, marsAngle } = getAngles(p);
+
+                const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+                const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+                const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
+
+                const sunAngle = earthAngle + Math.PI;
+                let elongation = marsAngleFromEarth - sunAngle;
+                while (elongation < -Math.PI) elongation += 2 * Math.PI;
+                while (elongation > Math.PI) elongation -= 2 * Math.PI;
+
+                const skyX = skyCanvas.width / 2 - (elongation / Math.PI) * (skyCanvas.width / 2 - 50);
+                skyTrail.push({ x: skyX, y: skyCanvas.height / 2, progress: p });
+            }
+
+            updateUI(currentProgress);
+        });
+
+        // 초기화
+        updateUI(0);
+    </script>
+</body>
+</html>
