@@ -260,96 +260,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* 스마트폰 반응형 */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            h1 {
-                font-size: 1.3em;
-                margin-bottom: 5px;
-            }
-
-            .subtitle {
-                font-size: 11px;
-                margin-bottom: 15px;
-            }
-
-            .views-container {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .view-box {
-                padding: 10px;
-            }
-
-            .view-title {
-                font-size: 14px;
-            }
-
-            canvas {
-                width: 100% !important;
-                height: auto !important;
-            }
-
-            .sky-view-container {
-                padding: 10px;
-            }
-
-            .controls {
-                padding: 15px;
-            }
-
-            .control-row {
-                gap: 10px;
-            }
-
-            .btn {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
-
-            .slider-container {
-                min-width: 100%;
-            }
-
-            .info-panel {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-
-            .info-box {
-                padding: 10px;
-            }
-
-            .info-label {
-                font-size: 10px;
-            }
-
-            .info-value {
-                font-size: 14px;
-            }
-
-            .legend {
-                gap: 15px;
-            }
-
-            .legend-item {
-                font-size: 12px;
-            }
-
-            .explanation {
-                font-size: 12px;
-                padding: 12px;
-            }
-
-            .explanation h3 {
-                font-size: 14px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -476,15 +386,6 @@
             const centerX = helioCanvas.width / 2;
             const centerY = helioCanvas.height / 2;
 
-            // 동적 스케일 (캔버스 크기에 맞춤)
-            const scale = Math.min(helioCanvas.width, helioCanvas.height) / 400;
-            const earthOrbit = EARTH_ORBIT_RADIUS * scale;
-            const marsOrbit = MARS_ORBIT_RADIUS * scale;
-            const sunSize = 15 * scale;
-            const earthSize = 10 * scale;
-            const marsSize = 8 * scale;
-            const fontSize = Math.max(10, 12 * scale);
-
             // 배경 클리어
             ctx.clearRect(0, 0, helioCanvas.width, helioCanvas.height);
 
@@ -494,39 +395,39 @@
 
             // 지구 궤도
             ctx.beginPath();
-            ctx.arc(centerX, centerY, earthOrbit, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, EARTH_ORBIT_RADIUS, 0, Math.PI * 2);
             ctx.stroke();
 
             // 화성 궤도
             ctx.beginPath();
-            ctx.arc(centerX, centerY, marsOrbit, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, MARS_ORBIT_RADIUS, 0, Math.PI * 2);
             ctx.stroke();
 
             // 태양 그리기
             ctx.beginPath();
-            ctx.arc(centerX, centerY, sunSize, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, 15, 0, Math.PI * 2);
             ctx.fillStyle = '#ffdd00';
             ctx.fill();
             ctx.shadowColor = '#ffdd00';
-            ctx.shadowBlur = 20 * scale;
+            ctx.shadowBlur = 20;
             ctx.fill();
             ctx.shadowBlur = 0;
 
             // 지구 위치 계산 및 그리기
-            const earthX = centerX + earthOrbit * Math.cos(earthAngle);
-            const earthY = centerY - earthOrbit * Math.sin(earthAngle);
+            const earthX = centerX + EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+            const earthY = centerY - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
 
             ctx.beginPath();
-            ctx.arc(earthX, earthY, earthSize, 0, Math.PI * 2);
+            ctx.arc(earthX, earthY, 10, 0, Math.PI * 2);
             ctx.fillStyle = '#4a9eff';
             ctx.fill();
 
             // 화성 위치 계산 및 그리기
-            const marsX = centerX + marsOrbit * Math.cos(marsAngle);
-            const marsY = centerY - marsOrbit * Math.sin(marsAngle);
+            const marsX = centerX + MARS_ORBIT_RADIUS * Math.cos(marsAngle);
+            const marsY = centerY - MARS_ORBIT_RADIUS * Math.sin(marsAngle);
 
             ctx.beginPath();
-            ctx.arc(marsX, marsY, marsSize, 0, Math.PI * 2);
+            ctx.arc(marsX, marsY, 8, 0, Math.PI * 2);
             ctx.fillStyle = '#ff6b4a';
             ctx.fill();
 
@@ -550,11 +451,11 @@
 
             // 레이블
             ctx.fillStyle = '#fff';
-            ctx.font = `${fontSize}px sans-serif`;
+            ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('태양', centerX, centerY + sunSize + 15 * scale);
-            ctx.fillText('지구', earthX, earthY + earthSize + 10 * scale);
-            ctx.fillText('화성', marsX, marsY + marsSize + 12 * scale);
+            ctx.fillText('태양', centerX, centerY + 30);
+            ctx.fillText('지구', earthX, earthY + 20);
+            ctx.fillText('화성', marsX, marsY + 20);
         }
 
         // 지구 중심 뷰 그리기
@@ -563,13 +464,6 @@
             const centerX = geoCanvas.width / 2;
             const centerY = geoCanvas.height / 2;
             const maxRadius = Math.min(centerX, centerY) - 30; // 여백 확보
-
-            // 동적 스케일
-            const scale = Math.min(geoCanvas.width, geoCanvas.height) / 400;
-            const earthSize = 12 * scale;
-            const sunSize = 15 * scale;
-            const marsSize = 8 * scale;
-            const fontSize = Math.max(10, 12 * scale);
 
             ctx.clearRect(0, 0, geoCanvas.width, geoCanvas.height);
 
@@ -595,22 +489,22 @@
 
             // 지구 그리기 (중심)
             ctx.beginPath();
-            ctx.arc(centerX, centerY, earthSize, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
             ctx.fillStyle = '#4a9eff';
             ctx.fill();
 
             // 태양 그리기
             ctx.beginPath();
-            ctx.arc(sunX, sunY, sunSize, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, 15, 0, Math.PI * 2);
             ctx.fillStyle = '#ffdd00';
             ctx.shadowColor = '#ffdd00';
-            ctx.shadowBlur = 15 * scale;
+            ctx.shadowBlur = 15;
             ctx.fill();
             ctx.shadowBlur = 0;
 
             // 화성 그리기
             ctx.beginPath();
-            ctx.arc(marsDisplayX, marsDisplayY, marsSize, 0, Math.PI * 2);
+            ctx.arc(marsDisplayX, marsDisplayY, 8, 0, Math.PI * 2);
             ctx.fillStyle = '#ff6b4a';
             ctx.fill();
 
@@ -626,11 +520,11 @@
 
             // 레이블
             ctx.fillStyle = '#fff';
-            ctx.font = `${fontSize}px sans-serif`;
+            ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('지구', centerX, centerY + earthSize + 13 * scale);
-            ctx.fillText('태양', sunX, sunY + sunSize + 10 * scale);
-            ctx.fillText('화성', marsDisplayX, marsDisplayY + marsSize + 12 * scale);
+            ctx.fillText('지구', centerX, centerY + 25);
+            ctx.fillText('태양', sunX, sunY + 25);
+            ctx.fillText('화성', marsDisplayX, marsDisplayY + 20);
 
             return marsAngleFromEarth;
         }
@@ -659,14 +553,7 @@
             const width = skyCanvas.width;
             const height = skyCanvas.height;
             const centerY = height / 2;
-
-            // 동적 스케일 (모바일 대응)
-            const scale = width / 850;
-            const margin = Math.max(40, 60 * scale);
-            const fontSize = Math.max(9, 10 * scale);
-            const fontSizeLarge = Math.max(10, 12 * scale);
-            const marsRadius = Math.max(8, 12 * scale);
-            const dotRadius = Math.max(3, 4 * scale);
+            const margin = 60;
 
             ctx.clearRect(0, 0, width, height);
 
@@ -764,23 +651,23 @@
                 }
             }
 
-            // 날짜별 위치 점 표시 (60일 간격)
-            ctx.font = `${fontSize}px sans-serif`;
+            // 날짜별 위치 점 표시 (30일 간격)
+            ctx.font = '10px sans-serif';
             ctx.textAlign = 'center';
             for (let i = 0; i <= currentIndex; i++) {
                 const point = fullPath[i];
                 const x = angleToX(point.angle);
 
                 if (x > margin && x < width - margin) {
-                    // 60일 간격으로 점과 날짜 표시
+                    // 30일 간격으로 점과 날짜 표시
                     if (Math.round(point.days) % 60 === 0 || i === 0) {
                         ctx.fillStyle = '#ffffff';
                         ctx.beginPath();
-                        ctx.arc(x, centerY, dotRadius, 0, Math.PI * 2);
+                        ctx.arc(x, centerY, 4, 0, Math.PI * 2);
                         ctx.fill();
 
                         ctx.fillStyle = '#aaaaaa';
-                        ctx.fillText(`${Math.round(point.days)}일`, x, centerY + 15 * scale);
+                        ctx.fillText(`${Math.round(point.days)}일`, x, centerY + 20);
                     }
                 }
             }
@@ -790,9 +677,9 @@
             if (startX > margin && startX < width - margin) {
                 ctx.fillStyle = '#ffd700';
                 ctx.beginPath();
-                ctx.arc(startX, centerY, dotRadius + 2, 0, Math.PI * 2);
+                ctx.arc(startX, centerY, 6, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillText('합', startX, centerY - 18 * scale);
+                ctx.fillText('합', startX, centerY - 25);
             }
 
             // 현재 화성 위치
@@ -804,33 +691,32 @@
             if (currentX > margin && currentX < width - margin) {
                 // 화성 표시
                 ctx.beginPath();
-                ctx.arc(currentX, centerY, marsRadius, 0, Math.PI * 2);
+                ctx.arc(currentX, centerY, 12, 0, Math.PI * 2);
                 ctx.fillStyle = '#ff6b4a';
                 ctx.shadowColor = '#ff6b4a';
-                ctx.shadowBlur = 15 * scale;
+                ctx.shadowBlur = 15;
                 ctx.fill();
                 ctx.shadowBlur = 0;
 
                 // 화성 라벨
                 ctx.fillStyle = '#ff6b4a';
-                ctx.font = `bold ${fontSizeLarge}px sans-serif`;
-                ctx.fillText('♂ 화성', currentX, centerY - 18 * scale);
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText('♂ 화성', currentX, centerY - 25);
             }
 
             // 범례 및 방향 표시
-            ctx.font = `${fontSizeLarge}px sans-serif`;
+            ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
             ctx.fillStyle = '#4CAF50';
-            ctx.fillText('━ 순행 (서→동)', 10 * scale, 18 * scale);
+            ctx.fillText('━ 순행 (서→동)', 20, 25);
             ctx.fillStyle = '#f44336';
-            ctx.fillText('━ 역행 (동→서)', 10 * scale, 35 * scale);
+            ctx.fillText('━ 역행 (동→서)', 20, 45);
 
             ctx.textAlign = 'center';
             ctx.fillStyle = '#888';
-            ctx.font = `${fontSize}px sans-serif`;
-            ctx.fillText('← 동 (E)', margin + 20 * scale, height - 8 * scale);
-            ctx.fillText('서 (W) →', width - margin - 20 * scale, height - 8 * scale);
-            ctx.fillText('합 (0°)', width / 2, height - 8 * scale);
+            ctx.fillText('← 동 (E) +180°', margin + 30, height - 15);
+            ctx.fillText('서 (W) -180° →', width - margin - 30, height - 15);
+            ctx.fillText('합 (0°)', width / 2, height - 15);
 
             // 현재 운동 상태 표시
             if (currentIndex > 0) {
@@ -840,17 +726,17 @@
                 while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
                 while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
 
-                ctx.font = `bold ${Math.max(12, 16 * scale)}px sans-serif`;
+                ctx.font = 'bold 16px sans-serif';
                 ctx.textAlign = 'right';
                 if (dAngle > 0.0001) {
                     ctx.fillStyle = '#4CAF50';
-                    ctx.fillText('▶ 순행 중', width - 10 * scale, 22 * scale);
+                    ctx.fillText('▶ 순행 중', width - 20, 30);
                 } else if (dAngle < -0.0001) {
                     ctx.fillStyle = '#f44336';
-                    ctx.fillText('◀ 역행 중', width - 10 * scale, 22 * scale);
+                    ctx.fillText('◀ 역행 중', width - 20, 30);
                 } else {
                     ctx.fillStyle = '#ffc107';
-                    ctx.fillText('● 유 (정지)', width - 10 * scale, 22 * scale);
+                    ctx.fillText('● 유 (정지)', width - 20, 30);
                 }
             }
 
@@ -983,46 +869,7 @@
             updateUI(currentProgress);
         });
 
-        // 캔버스 크기 조절 (반응형)
-        function resizeCanvases() {
-            const isMobile = window.innerWidth <= 600;
-
-            if (isMobile) {
-                const containerWidth = document.querySelector('.view-box').offsetWidth - 20; // padding 제외
-                const skyContainerWidth = document.querySelector('.sky-view-container').offsetWidth - 20;
-
-                // 태양 중심 뷰, 지구 중심 뷰 (1:1 비율)
-                const squareSize = Math.min(containerWidth, 350);
-                helioCanvas.width = squareSize;
-                helioCanvas.height = squareSize;
-                geoCanvas.width = squareSize;
-                geoCanvas.height = squareSize;
-
-                // 천구 뷰 (가로로 긴 비율 유지)
-                const skyWidth = skyContainerWidth;
-                const skyHeight = Math.round(skyWidth * 0.4); // 가로:세로 = 2.5:1 비율
-                skyCanvas.width = skyWidth;
-                skyCanvas.height = skyHeight;
-            } else {
-                // PC 화면 - 원래 크기로 복원
-                helioCanvas.width = 400;
-                helioCanvas.height = 400;
-                geoCanvas.width = 400;
-                geoCanvas.height = 400;
-                skyCanvas.width = 850;
-                skyCanvas.height = 300;
-            }
-
-            // 경로 재계산 및 다시 그리기
-            calculateFullPath();
-            updateUI(currentProgress);
-        }
-
-        // 윈도우 리사이즈 이벤트
-        window.addEventListener('resize', resizeCanvases);
-
         // 초기화
-        resizeCanvases();
         updateUI(0);
     </script>
 </body>
