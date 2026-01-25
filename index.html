@@ -592,12 +592,17 @@
             const initAngle = fullPath[0].angle;
 
             // 화면 좌표 변환 함수
+            // 천구 한 바퀴(2π = 360°)가 화면 전체에 들어오도록 스케일 조정
+            const fullCircle = 2 * Math.PI;
+            const scale = (width - margin * 2) / fullCircle;
+
             const angleToX = (angle) => {
                 let diff = angle - initAngle;
                 while (diff > Math.PI) diff -= 2 * Math.PI;
                 while (diff < -Math.PI) diff += 2 * Math.PI;
                 // 순행(각도 증가) = 왼쪽으로, 역행(각도 감소) = 오른쪽으로
-                return width / 2 - diff * (width - margin * 2) / 0.8;
+                // 중앙이 충 위치, 양끝이 ±180°
+                return width / 2 - diff * scale;
             };
 
             // 전체 경로 그리기 (회색 점선으로 예정 경로)
@@ -709,8 +714,9 @@
 
             ctx.textAlign = 'center';
             ctx.fillStyle = '#888';
-            ctx.fillText('← 동 (E)', margin, height - 15);
-            ctx.fillText('서 (W) →', width - margin, height - 15);
+            ctx.fillText('← 동 (E) +180°', margin + 30, height - 15);
+            ctx.fillText('서 (W) -180° →', width - margin - 30, height - 15);
+            ctx.fillText('충 (0°)', width / 2, height - 15);
 
             // 현재 운동 상태 표시
             if (currentIndex > 0) {
