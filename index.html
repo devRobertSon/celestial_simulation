@@ -293,9 +293,9 @@
             <div class="control-row">
                 <div class="slider-container">
                     <div class="slider-label">
-                        <span>충 (Opposition)</span>
+                        <span>합 (Conjunction)</span>
                         <span id="sliderValue">0%</span>
-                        <span>다음 충</span>
+                        <span>다음 합</span>
                     </div>
                     <input type="range" class="slider" id="timeSlider" min="0" max="100" value="0">
                 </div>
@@ -316,7 +316,7 @@
                 </div>
                 <div class="info-box">
                     <div class="info-label">외행성 위치</div>
-                    <div class="info-value" id="marsPosition">충 (Opposition)</div>
+                    <div class="info-value" id="marsPosition">합 (Conjunction)</div>
                 </div>
             </div>
 
@@ -332,9 +332,9 @@
             <ul>
                 <li><span class="highlight-prograde">순행 (Prograde)</span>: 외행성이 별들 사이를 서→동 방향으로 이동하는 것처럼 보이는 현상</li>
                 <li><span class="highlight-retrograde">역행 (Retrograde)</span>: 외행성이 별들 사이를 동→서 방향으로 이동하는 것처럼 보이는 현상</li>
-                <li><span class="highlight-opposition">충 (Opposition)</span>: 태양-지구-외행성이 일직선 상에 놓여, 외행성이 태양의 정반대편에 위치하는 때</li>
+                <li><span class="highlight-opposition">합 (Conjunction)</span>: 태양-지구-외행성이 일직선 상에 놓여, 외행성이 태양의 정반대편에 위치하는 때</li>
                 <li><strong>역행의 원인</strong>: 지구가 외행성보다 빠르게 공전하므로, 지구가 외행성을 추월할 때 외행성이 뒤로 움직이는 것처럼 보입니다.</li>
-                <li><strong>회합주기</strong>: 화성의 경우 약 780일(약 2년 2개월)마다 충이 반복됩니다.</li>
+                <li><strong>회합주기</strong>: 화성의 경우 약 780일(약 2년 2개월)마다 합이 반복됩니다.</li>
             </ul>
         </div>
     </div>
@@ -363,8 +363,8 @@
         let currentProgress = 0; // 0 ~ 1 (회합주기 진행도)
         const MAX_TRAIL_LENGTH = 200;
 
-        // 시작 시 지구와 화성의 초기 각도 (충 위치)
-        // 충일 때: 태양-지구-화성이 일직선, 화성은 지구 반대편
+        // 시작 시 지구와 화성의 초기 각도 (합 위치)
+        // 합일 때: 태양-지구-화성이 일직선
         const INITIAL_EARTH_ANGLE = 0;
         const INITIAL_MARS_ANGLE = Math.PI; // 180° 반대편
 
@@ -588,7 +588,7 @@
                 ctx.fill();
             }
 
-            // 초기 각도 (충 위치 기준)
+            // 초기 각도 (합 위치 기준)
             const initAngle = fullPath[0].angle;
 
             // 화면 좌표 변환 함수
@@ -601,7 +601,7 @@
                 while (diff > Math.PI) diff -= 2 * Math.PI;
                 while (diff < -Math.PI) diff += 2 * Math.PI;
                 // 순행(각도 증가) = 왼쪽으로, 역행(각도 감소) = 오른쪽으로
-                // 중앙이 충 위치, 양끝이 ±180°
+                // 중앙이 합 위치, 양끝이 ±180°
                 return width / 2 - diff * scale;
             };
 
@@ -672,14 +672,14 @@
                 }
             }
 
-            // 충 위치 표시 (시작점)
+            // 합 위치 표시 (시작점)
             const startX = angleToX(initAngle);
             if (startX > margin && startX < width - margin) {
                 ctx.fillStyle = '#ffd700';
                 ctx.beginPath();
                 ctx.arc(startX, centerY, 6, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillText('충', startX, centerY - 25);
+                ctx.fillText('합', startX, centerY - 25);
             }
 
             // 현재 화성 위치
@@ -716,7 +716,7 @@
             ctx.fillStyle = '#888';
             ctx.fillText('← 동 (E) +180°', margin + 30, height - 15);
             ctx.fillText('서 (W) -180° →', width - margin - 30, height - 15);
-            ctx.fillText('충 (0°)', width / 2, height - 15);
+            ctx.fillText('합 (0°)', width / 2, height - 15);
 
             // 현재 운동 상태 표시
             if (currentIndex > 0) {
@@ -782,8 +782,8 @@
         // 위치 설명
         function getPositionDescription(elongationDeg) {
             const absElong = Math.abs(elongationDeg);
-            if (absElong > 170) return '충 (Opposition)';
-            if (absElong > 120) return '충 근처';
+            if (absElong > 170) return '합 (Conjunction)';
+            if (absElong > 120) return '합 근처';
             if (absElong > 90) return '서구/동구 근처';
             if (absElong > 45) return '합 접근 중';
             return '합 (Conjunction) 근처';
