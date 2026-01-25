@@ -279,8 +279,8 @@
         </div>
 
         <div class="sky-view-container">
-            <h3 class="view-title">🌠 천구에서 본 외행성의 위치 (동→서 방향)</h3>
-            <canvas id="skyCanvas" width="850" height="150"></canvas>
+            <h3 class="view-title">🌠 밤하늘에서 본 화성의 이동 경로 (별자리 배경)</h3>
+            <canvas id="skyCanvas" width="850" height="300"></canvas>
         </div>
 
         <div class="controls">
@@ -361,7 +361,6 @@
         let isPlaying = false;
         let animationId = null;
         let currentProgress = 0; // 0 ~ 1 (회합주기 진행도)
-        let skyTrail = []; // 천구에서의 외행성 궤적
         const MAX_TRAIL_LENGTH = 200;
 
         // 시작 시 지구와 화성의 초기 각도 (충 위치)
@@ -530,127 +529,216 @@
             return marsAngleFromEarth;
         }
 
-        // 충 위치에서의 초기 화성 각도 (기준점)
-        let initialMarsAngleFromEarth = null;
+        // 1회합주기 전체 경로를 미리 계산
+        let fullPath = [];
+        function calculateFullPath() {
+            fullPath = [];
+            const steps = 100; // 100개 지점
+            for (let i = 0; i <= steps; i++) {
+                const p = i / steps;
+                const { earthAngle, marsAngle, days } = getAngles(p);
 
-        // 천구 뷰 그리기
+                const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+                const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+                const angle = Math.atan2(marsRelY, marsRelX);
+
+                fullPath.push({ progress: p, angle: angle, days: days });
+            }
+        }
+        calculateFullPath();
+
+        // 천구 뷰 그리기 - 별자리 배경 위 화성 이동 경로
         function drawSkyView(earthAngle, marsAngle, progress) {
             const ctx = skyCtx;
             const width = skyCanvas.width;
             const height = skyCanvas.height;
+            const centerY = height / 2;
+            const margin = 60;
 
             ctx.clearRect(0, 0, width, height);
 
-            // 배경 별 그리기 (고정된 별들)
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            for (let i = 0; i < 100; i++) {
-                const x = (i * 37) % width;
-                const y = (i * 23) % height;
+            // 배경 별 그리기 (고정된 밝은 별들)
+            const starPositions = [
+                {x: 0.05, y: 0.3, size: 2}, {x: 0.12, y: 0.7, size: 1.5},
+                {x: 0.18, y: 0.4, size: 1}, {x: 0.25, y: 0.6, size: 2.5},
+                {x: 0.32, y: 0.25, size: 1.5}, {x: 0.38, y: 0.8, size: 1},
+                {x: 0.45, y: 0.35, size: 2}, {x: 0.52, y: 0.65, size: 1.5},
+                {x: 0.58, y: 0.2, size: 1}, {x: 0.65, y: 0.75, size: 2},
+                {x: 0.72, y: 0.4, size: 1.5}, {x: 0.78, y: 0.55, size: 1},
+                {x: 0.85, y: 0.3, size: 2}, {x: 0.92, y: 0.7, size: 1.5},
+                {x: 0.15, y: 0.5, size: 1}, {x: 0.35, y: 0.45, size: 1.5},
+                {x: 0.55, y: 0.5, size: 1}, {x: 0.75, y: 0.5, size: 1.5},
+                {x: 0.95, y: 0.45, size: 1}
+            ];
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            starPositions.forEach(star => {
                 ctx.beginPath();
-                ctx.arc(x, y, Math.random() * 1.5, 0, Math.PI * 2);
+                ctx.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 희미한 배경 별들
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            for (let i = 0; i < 80; i++) {
+                const x = ((i * 47 + 13) % 100) / 100 * width;
+                const y = ((i * 31 + 7) % 100) / 100 * height;
+                ctx.beginPath();
+                ctx.arc(x, y, 0.8, 0, Math.PI * 2);
                 ctx.fill();
             }
 
-            // 황도 표시
-            ctx.strokeStyle = 'rgba(255, 200, 100, 0.3)';
-            ctx.lineWidth = 2;
+            // 초기 각도 (충 위치 기준)
+            const initAngle = fullPath[0].angle;
+
+            // 화면 좌표 변환 함수
+            const angleToX = (angle) => {
+                let diff = angle - initAngle;
+                while (diff > Math.PI) diff -= 2 * Math.PI;
+                while (diff < -Math.PI) diff += 2 * Math.PI;
+                // 순행(각도 증가) = 왼쪽으로, 역행(각도 감소) = 오른쪽으로
+                return width / 2 - diff * (width - margin * 2) / 0.8;
+            };
+
+            // 전체 경로 그리기 (회색 점선으로 예정 경로)
+            ctx.setLineDash([3, 3]);
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.4)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(0, height / 2);
-            ctx.lineTo(width, height / 2);
-            ctx.stroke();
-
-            // 화성의 방향 계산 (지구에서 본 각도)
-            const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
-            const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
-            const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
-
-            // 초기 각도 설정 (충 위치 기준)
-            if (initialMarsAngleFromEarth === null) {
-                initialMarsAngleFromEarth = marsAngleFromEarth;
-            }
-
-            // 각도 변화량 계산 (초기 위치 기준)
-            let angleChange = marsAngleFromEarth - initialMarsAngleFromEarth;
-            // 연속성 유지를 위해 -π ~ π 범위로 조정
-            while (angleChange > Math.PI) angleChange -= 2 * Math.PI;
-            while (angleChange < -Math.PI) angleChange += 2 * Math.PI;
-
-            // 화면 좌표 (별들 사이에서의 위치)
-            // 순행 = 각도 증가 = 서→동 = 화면에서 왼쪽으로 이동
-            // 역행 = 각도 감소 = 동→서 = 화면에서 오른쪽으로 이동
-            // 1회합주기 동안 화성의 각도 변화는 약 ±0.3 라디안 범위
-            const maxAngleRange = 0.5; // 최대 각도 범위 (라디안)
-            const scale = (width - 100) / (maxAngleRange * 2);
-            // 화면 범위 내로 제한
-            const clampedAngleChange = Math.max(-maxAngleRange, Math.min(maxAngleRange, angleChange));
-            const skyX = Math.max(50, Math.min(width - 50, width / 2 - clampedAngleChange * scale));
-            const skyY = height / 2;
-
-            // 이각 계산 (정보 표시용)
-            const sunAngle = earthAngle + Math.PI;
-            let elongation = marsAngleFromEarth - sunAngle;
-            while (elongation < -Math.PI) elongation += 2 * Math.PI;
-            while (elongation > Math.PI) elongation -= 2 * Math.PI;
-
-            // 궤적에 추가
-            skyTrail.push({ x: skyX, y: skyY, progress: progress, angle: marsAngleFromEarth });
-            if (skyTrail.length > MAX_TRAIL_LENGTH) {
-                skyTrail.shift();
-            }
-
-            // 궤적 그리기
-            if (skyTrail.length > 1) {
-                ctx.beginPath();
-                ctx.moveTo(skyTrail[0].x, skyTrail[0].y);
-                for (let i = 1; i < skyTrail.length; i++) {
-                    const alpha = i / skyTrail.length;
-                    ctx.strokeStyle = `rgba(255, 150, 100, ${alpha * 0.8})`;
-                    ctx.lineWidth = 2;
-                    ctx.lineTo(skyTrail[i].x, skyTrail[i].y);
-                }
-                ctx.stroke();
-            }
-
-            // 화성 현재 위치
-            ctx.beginPath();
-            ctx.arc(skyX, skyY, 10, 0, Math.PI * 2);
-            ctx.fillStyle = '#ff6b4a';
-            ctx.shadowColor = '#ff6b4a';
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // 시작점 표시 (충 위치)
-            ctx.fillStyle = '#ffd700';
-            ctx.font = '12px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('★ 충 시작점', width / 2, height - 10);
-
-            // 동서 방향 표시
-            ctx.fillStyle = '#888';
-            ctx.fillText('← 동 (E) 순행방향', 80, 20);
-            ctx.fillText('역행방향 서 (W) →', width - 80, 20);
-
-            // 순행/역행 화살표 표시 (각도 변화로 판별)
-            if (skyTrail.length > 10) {
-                const recent = skyTrail.slice(-10);
-                // 각도 변화로 순행/역행 판별
-                let dAngle = recent[recent.length - 1].angle - recent[0].angle;
-                while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
-                while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
-
-                // 각도 증가 = 순행 (서→동), 각도 감소 = 역행 (동→서)
-                if (Math.abs(dAngle) > 0.0001) {
-                    ctx.font = 'bold 14px sans-serif';
-                    if (dAngle > 0) {
-                        ctx.fillStyle = '#4CAF50';
-                        ctx.fillText('← 순행 (서→동)', skyX, skyY - 20);
+            let started = false;
+            for (let i = 0; i < fullPath.length; i++) {
+                const x = angleToX(fullPath[i].angle);
+                if (x > margin && x < width - margin) {
+                    if (!started) {
+                        ctx.moveTo(x, centerY);
+                        started = true;
                     } else {
-                        ctx.fillStyle = '#f44336';
-                        ctx.fillText('역행 (동→서) →', skyX, skyY - 20);
+                        ctx.lineTo(x, centerY);
                     }
                 }
             }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 현재까지의 경로 (순행=녹색, 역행=빨간색)
+            const currentIndex = Math.floor(progress * (fullPath.length - 1));
+
+            for (let i = 1; i <= currentIndex; i++) {
+                const prev = fullPath[i - 1];
+                const curr = fullPath[i];
+                const x1 = angleToX(prev.angle);
+                const x2 = angleToX(curr.angle);
+
+                // 각도 변화로 순행/역행 판별
+                let dAngle = curr.angle - prev.angle;
+                while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
+                while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
+
+                const isRetrograde = dAngle < 0;
+
+                if (x1 > margin && x1 < width - margin && x2 > margin && x2 < width - margin) {
+                    ctx.strokeStyle = isRetrograde ? '#f44336' : '#4CAF50';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, centerY);
+                    ctx.lineTo(x2, centerY);
+                    ctx.stroke();
+                }
+            }
+
+            // 날짜별 위치 점 표시 (30일 간격)
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= currentIndex; i++) {
+                const point = fullPath[i];
+                const x = angleToX(point.angle);
+
+                if (x > margin && x < width - margin) {
+                    // 30일 간격으로 점과 날짜 표시
+                    if (Math.round(point.days) % 60 === 0 || i === 0) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(x, centerY, 4, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#aaaaaa';
+                        ctx.fillText(`${Math.round(point.days)}일`, x, centerY + 20);
+                    }
+                }
+            }
+
+            // 충 위치 표시 (시작점)
+            const startX = angleToX(initAngle);
+            if (startX > margin && startX < width - margin) {
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(startX, centerY, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillText('충', startX, centerY - 25);
+            }
+
+            // 현재 화성 위치
+            const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
+            const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
+            const currentAngle = Math.atan2(marsRelY, marsRelX);
+            const currentX = angleToX(currentAngle);
+
+            if (currentX > margin && currentX < width - margin) {
+                // 화성 표시
+                ctx.beginPath();
+                ctx.arc(currentX, centerY, 12, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff6b4a';
+                ctx.shadowColor = '#ff6b4a';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // 화성 라벨
+                ctx.fillStyle = '#ff6b4a';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText('♂ 화성', currentX, centerY - 25);
+            }
+
+            // 범례 및 방향 표시
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillText('━ 순행 (서→동)', 20, 25);
+            ctx.fillStyle = '#f44336';
+            ctx.fillText('━ 역행 (동→서)', 20, 45);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#888';
+            ctx.fillText('← 동 (E)', margin, height - 15);
+            ctx.fillText('서 (W) →', width - margin, height - 15);
+
+            // 현재 운동 상태 표시
+            if (currentIndex > 0) {
+                const prev = fullPath[Math.max(0, currentIndex - 1)];
+                const curr = fullPath[currentIndex];
+                let dAngle = curr.angle - prev.angle;
+                while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
+                while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
+
+                ctx.font = 'bold 16px sans-serif';
+                ctx.textAlign = 'right';
+                if (dAngle > 0.0001) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillText('▶ 순행 중', width - 20, 30);
+                } else if (dAngle < -0.0001) {
+                    ctx.fillStyle = '#f44336';
+                    ctx.fillText('◀ 역행 중', width - 20, 30);
+                } else {
+                    ctx.fillStyle = '#ffc107';
+                    ctx.fillText('● 유 (정지)', width - 20, 30);
+                }
+            }
+
+            // 이각 계산 (정보 표시용)
+            const sunAngle = earthAngle + Math.PI;
+            let elongation = currentAngle - sunAngle;
+            while (elongation < -Math.PI) elongation += 2 * Math.PI;
+            while (elongation > Math.PI) elongation -= 2 * Math.PI;
 
             return elongation;
         }
@@ -733,7 +821,6 @@
             currentProgress += 0.0005; // 속도 조절
             if (currentProgress >= 1) {
                 currentProgress = 0;
-                skyTrail = [];
             }
 
             document.getElementById('timeSlider').value = currentProgress * 100;
@@ -763,55 +850,16 @@
                 cancelAnimationFrame(animationId);
             }
             currentProgress = 0;
-            skyTrail = [];
-            initialMarsAngleFromEarth = null; // 초기 각도 리셋
             document.getElementById('timeSlider').value = 0;
             updateUI(0);
         });
 
         document.getElementById('timeSlider').addEventListener('input', (e) => {
-            const wasPlaying = isPlaying;
             isPlaying = false;
             if (animationId) {
                 cancelAnimationFrame(animationId);
             }
-
             currentProgress = e.target.value / 100;
-
-            // 슬라이더 위치에 따라 궤적 재생성
-            skyTrail = [];
-            initialMarsAngleFromEarth = null; // 초기 각도 리셋
-
-            const steps = Math.floor(currentProgress * MAX_TRAIL_LENGTH);
-            const width = skyCanvas.width;
-
-            // 초기 각도 먼저 계산
-            const { earthAngle: ea0, marsAngle: ma0 } = getAngles(0);
-            const marsRelX0 = MARS_ORBIT_RADIUS * Math.cos(ma0) - EARTH_ORBIT_RADIUS * Math.cos(ea0);
-            const marsRelY0 = MARS_ORBIT_RADIUS * Math.sin(ma0) - EARTH_ORBIT_RADIUS * Math.sin(ea0);
-            const initAngle = Math.atan2(marsRelY0, marsRelX0);
-            initialMarsAngleFromEarth = initAngle;
-
-            const maxAngleRange = 0.5;
-            const scale = (width - 100) / (maxAngleRange * 2);
-
-            for (let i = 0; i <= steps; i++) {
-                const p = (i / MAX_TRAIL_LENGTH) * currentProgress;
-                const { earthAngle, marsAngle } = getAngles(p);
-
-                const marsRelX = MARS_ORBIT_RADIUS * Math.cos(marsAngle) - EARTH_ORBIT_RADIUS * Math.cos(earthAngle);
-                const marsRelY = MARS_ORBIT_RADIUS * Math.sin(marsAngle) - EARTH_ORBIT_RADIUS * Math.sin(earthAngle);
-                const marsAngleFromEarth = Math.atan2(marsRelY, marsRelX);
-
-                let angleChange = marsAngleFromEarth - initialMarsAngleFromEarth;
-                while (angleChange > Math.PI) angleChange -= 2 * Math.PI;
-                while (angleChange < -Math.PI) angleChange += 2 * Math.PI;
-
-                const clampedAngleChange = Math.max(-maxAngleRange, Math.min(maxAngleRange, angleChange));
-                const skyX = Math.max(50, Math.min(width - 50, width / 2 - clampedAngleChange * scale));
-                skyTrail.push({ x: skyX, y: skyCanvas.height / 2, progress: p, angle: marsAngleFromEarth });
-            }
-
             updateUI(currentProgress);
         });
 
