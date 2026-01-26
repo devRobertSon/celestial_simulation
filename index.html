@@ -260,113 +260,6 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* 스마트폰: 전체 페이지를 축소해서 PC와 동일한 배치로 표시 */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-
-            .container {
-                transform-origin: top center;
-                transform: scale(0.9);
-                width: 111%; /* 1/0.9 to compensate for scale */
-                margin-left: -5.5%;
-            }
-
-            h1 {
-                font-size: 1.2em;
-            }
-
-            .subtitle {
-                font-size: 11px;
-            }
-
-            .views-container {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-
-            .view-box {
-                padding: 8px;
-            }
-
-            .view-title {
-                font-size: 11px;
-                margin-bottom: 5px;
-            }
-
-            #helioCanvas, #geoCanvas {
-                width: 100%;
-                max-width: 180px;
-                height: auto;
-            }
-
-            .sky-view-container {
-                padding: 8px;
-            }
-
-            #skyCanvas {
-                width: 100%;
-                height: auto;
-            }
-
-            .controls {
-                padding: 12px;
-            }
-
-            .control-row {
-                gap: 8px;
-            }
-
-            .btn {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-
-            .slider-container {
-                min-width: 100%;
-            }
-
-            .info-panel {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-
-            .info-box {
-                padding: 8px;
-            }
-
-            .info-label {
-                font-size: 9px;
-            }
-
-            .info-value {
-                font-size: 12px;
-            }
-
-            .legend {
-                gap: 10px;
-            }
-
-            .legend-item {
-                font-size: 10px;
-            }
-
-            .legend-color {
-                width: 12px;
-                height: 12px;
-            }
-
-            .explanation {
-                font-size: 11px;
-                padding: 10px;
-            }
-
-            .explanation h3 {
-                font-size: 13px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -758,7 +651,7 @@
                 }
             }
 
-            // 날짜별 위치 점 표시 (60일 간격)
+            // 날짜별 위치 점 표시 (30일 간격)
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'center';
             for (let i = 0; i <= currentIndex; i++) {
@@ -766,7 +659,7 @@
                 const x = angleToX(point.angle);
 
                 if (x > margin && x < width - margin) {
-                    // 60일 간격으로 점과 날짜 표시
+                    // 30일 간격으로 점과 날짜 표시
                     if (Math.round(point.days) % 60 === 0 || i === 0) {
                         ctx.fillStyle = '#ffffff';
                         ctx.beginPath();
