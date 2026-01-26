@@ -590,6 +590,29 @@
         let marsTrail = [];
         const TRAIL_MAX = 300;
 
+        // 순행/역행 판별 함수 (지구에서 본 화성의 각도 변화 기준)
+        function isRetrogradeMotion(progress) {
+            const delta = 0.001;
+            const { earthAngle: ea1, marsAngle: ma1 } = getAngles(progress);
+            const { earthAngle: ea2, marsAngle: ma2 } = getAngles(Math.min(progress + delta, 1));
+
+            // 지구에서 본 화성 방향 계산
+            const angle1 = Math.atan2(
+                MARS_ORBIT_RADIUS * Math.sin(ma1) - EARTH_ORBIT_RADIUS * Math.sin(ea1),
+                MARS_ORBIT_RADIUS * Math.cos(ma1) - EARTH_ORBIT_RADIUS * Math.cos(ea1)
+            );
+            const angle2 = Math.atan2(
+                MARS_ORBIT_RADIUS * Math.sin(ma2) - EARTH_ORBIT_RADIUS * Math.sin(ea2),
+                MARS_ORBIT_RADIUS * Math.cos(ma2) - EARTH_ORBIT_RADIUS * Math.cos(ea2)
+            );
+
+            let dAngle = angle2 - angle1;
+            while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
+            while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
+
+            return dAngle < 0;
+        }
+
         // 지구-태양 고정 뷰 그리기
         function drawSynodicView(earthAngle, marsAngle, progress) {
             const ctx = synodicCtx;
@@ -607,11 +630,14 @@
             const marsX = centerX + MARS_ORBIT_RADIUS * Math.cos(marsAngleInSynodic);
             const marsY = centerY - MARS_ORBIT_RADIUS * Math.sin(marsAngleInSynodic);
 
-            // 궤적 추가
+            // 현재 순행/역행 상태 판별
+            const isRetrograde = isRetrogradeMotion(progress);
+
+            // 궤적 추가 (순행/역행 상태도 함께 저장)
             if (progress === 0) {
                 marsTrail = []; // 리셋 시 궤적 초기화
             }
-            marsTrail.push({ x: marsX, y: marsY, progress: progress });
+            marsTrail.push({ x: marsX, y: marsY, progress: progress, isRetrograde: isRetrograde });
             if (marsTrail.length > TRAIL_MAX) {
                 marsTrail.shift();
             }
@@ -638,17 +664,8 @@
                     const prev = marsTrail[i - 1];
                     const curr = marsTrail[i];
 
-                    // 각도 변화로 순행/역행 판별
-                    const prevAngle = Math.atan2(centerY - prev.y, prev.x - centerX);
-                    const currAngle = Math.atan2(centerY - curr.y, curr.x - centerX);
-                    let dAngle = currAngle - prevAngle;
-                    while (dAngle > Math.PI) dAngle -= 2 * Math.PI;
-                    while (dAngle < -Math.PI) dAngle += 2 * Math.PI;
-
-                    // 회합주기 좌표계에서 역행은 지구가 화성을 추월할 때
-                    const isRetrograde = dAngle < 0;
-
-                    ctx.strokeStyle = isRetrograde ? 'rgba(244, 67, 54, 0.7)' : 'rgba(76, 175, 80, 0.7)';
+                    // 저장된 순행/역행 상태 사용
+                    ctx.strokeStyle = curr.isRetrograde ? 'rgba(244, 67, 54, 0.7)' : 'rgba(76, 175, 80, 0.7)';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.moveTo(prev.x, prev.y);
