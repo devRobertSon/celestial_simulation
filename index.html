@@ -458,7 +458,8 @@
             <ul>
                 <li><span class="highlight-prograde">순행 (Prograde)</span>: 외행성이 별들 사이를 서→동 방향으로 이동하는 것처럼 보이는 현상</li>
                 <li><span class="highlight-retrograde">역행 (Retrograde)</span>: 외행성이 별들 사이를 동→서 방향으로 이동하는 것처럼 보이는 현상</li>
-                <li><span class="highlight-opposition">합 (Conjunction)</span>: 태양-지구-외행성이 일직선 상에 놓여, 외행성이 태양의 정반대편에 위치하는 때</li>
+                <li><span class="highlight-opposition">충 (Opposition)</span>: 태양-지구-외행성이 일직선으로 늘어서며, 지구가 가운데에 위치하여 외행성이 태양 반대편에 보이는 때 (역행 발생)</li>
+                <li><span class="highlight-prograde">합 (Conjunction)</span>: 태양-지구-외행성이 일직선으로 늘어서며, 태양이 가운데에 위치하여 외행성이 태양 뒤에 있는 때</li>
                 <li><strong>역행의 원인</strong>: 지구가 외행성보다 빠르게 공전하므로, 지구가 외행성을 추월할 때 외행성이 뒤로 움직이는 것처럼 보입니다.</li>
                 <li><strong>회합주기</strong>: 화성의 경우 약 780일(약 2년 2개월)마다 합이 반복됩니다.</li>
             </ul>
@@ -1046,14 +1047,18 @@
             }
         }
 
-        // 위치 설명
+        // 위치 설명 (이각 기준)
+        // 이각 0° = 합 (Conjunction) - 화성이 태양 뒤에 있음
+        // 이각 180° = 충 (Opposition) - 화성이 태양 반대편에 있음
         function getPositionDescription(elongationDeg) {
             const absElong = Math.abs(elongationDeg);
-            if (absElong > 170) return '합 (Conjunction)';
-            if (absElong > 120) return '합 근처';
-            if (absElong > 90) return '서구/동구 근처';
-            if (absElong > 45) return '합 접근 중';
-            return '합 (Conjunction) 근처';
+            if (absElong < 10) return '합 (Conjunction)';
+            if (absElong < 45) return '합 근처';
+            if (absElong < 80) return '구 접근 중';
+            if (absElong < 100) return '구 (Quadrature)';
+            if (absElong < 135) return '충 접근 중';
+            if (absElong < 170) return '충 근처';
+            return '충 (Opposition)';
         }
 
         // UI 업데이트
