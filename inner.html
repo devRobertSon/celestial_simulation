@@ -432,9 +432,9 @@
             <div class="control-row">
                 <div class="slider-container">
                     <div class="slider-label">
-                        <span>외합 (Superior)</span>
+                        <span>내합 (Inferior)</span>
                         <span id="sliderValue">0%</span>
-                        <span>다음 외합</span>
+                        <span>다음 내합</span>
                     </div>
                     <input type="range" class="slider" id="timeSlider" min="0" max="100" value="0">
                 </div>
@@ -455,7 +455,7 @@
                 </div>
                 <div class="info-box">
                     <div class="info-label">내행성 위치</div>
-                    <div class="info-value" id="venusPosition">외합 (Superior)</div>
+                    <div class="info-value" id="venusPosition">내합 (Inferior Conj.)</div>
                 </div>
             </div>
 
@@ -508,10 +508,10 @@
         let currentProgress = 0; // 0 ~ 1 (회합주기 진행도)
         const MAX_TRAIL_LENGTH = 200;
 
-        // 시작 시 지구와 금성의 초기 각도 (외합 위치)
-        // 외합일 때: 태양-지구-금성이 일직선, 금성이 태양 뒤
+        // 시작 시 지구와 금성의 초기 각도 (내합 위치)
+        // 내합일 때: 태양-금성-지구가 일직선, 금성이 태양과 지구 사이
         const INITIAL_EARTH_ANGLE = 0;
-        const INITIAL_VENUS_ANGLE = 0; // 같은 방향 (외합)
+        const INITIAL_VENUS_ANGLE = 0; // 같은 방향 (내합)
 
         // 각속도 (라디안/일)
         const EARTH_ANGULAR_VELOCITY = (2 * Math.PI) / EARTH_PERIOD;
@@ -1036,7 +1036,7 @@
             // 외합/내합 표시
             ctx.fillStyle = '#ffd700';
             ctx.font = '11px sans-serif';
-            ctx.fillText('외합', centerX, 25);
+            ctx.fillText('내합', centerX, 25);
 
             // 현재 운동 상태 표시
             if (currentIndex > 0) {
@@ -1094,28 +1094,28 @@
         }
 
         // 위치 설명 (이각 기준) - 내행성용
-        // 외합 → 동방 최대이각 → 내합 → 서방 최대이각 → 외합 순환
+        // 내합 → 서방 최대이각 → 외합 → 동방 최대이각 → 내합 순환
         // elongationDeg > 0: 서방 이각 (새벽별)
         // elongationDeg < 0: 동방 이각 (저녁별)
         function getPositionDescription(elongationDeg, progress) {
             const absElong = Math.abs(elongationDeg);
 
             // 내합/외합 구분 (회합주기의 절반 기준)
-            // 외합에서 시작하므로 약 50% 지점이 내합
-            const isNearInferior = progress > 0.35 && progress < 0.65;
+            // 내합에서 시작하므로 약 50% 지점이 외합
+            const isNearSuperior = progress > 0.35 && progress < 0.65;
 
             if (absElong < 5) {
-                if (isNearInferior) {
-                    return '내합 (Inferior Conj.)';
-                } else {
+                if (isNearSuperior) {
                     return '외합 (Superior Conj.)';
+                } else {
+                    return '내합 (Inferior Conj.)';
                 }
             }
             if (absElong < 15) {
-                if (isNearInferior) {
-                    return '내합 근처';
-                } else {
+                if (isNearSuperior) {
                     return '외합 근처';
+                } else {
+                    return '내합 근처';
                 }
             }
             if (absElong >= 44) {
